@@ -14,7 +14,7 @@ router.post('/', isAuthenticated, upload.fields(uploadFields), projectController
 
 // Route to retrieve all projects
 // This route is also protected and requires user authentication
-router.get('/', isAuthenticated, projectController.getAllProjects);
+router.get('/', projectController.getAllProjects);
 
 // Route to retrieve a specific project by its ID
 // This route requires authentication to ensure that only logged-in users can access project details

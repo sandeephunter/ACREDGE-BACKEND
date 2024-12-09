@@ -45,6 +45,11 @@ app.use('/api/amenities', amenityRoutes);
 // This will catch any upload errors occurring in the preceding routes
 app.use(handleUploadError);
 
+//Default route
+app.get('/', (req, res) => {
+  res.send('Acredge User Backend');
+});
+
 // Define the port to run the server, defaulting to 3000 if not specified in environment variables
 const PORT = process.env.PORT || 3000;
 

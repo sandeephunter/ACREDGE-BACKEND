@@ -11,7 +11,7 @@ const { upload, uploadFields } = require('../middleware/UploadMiddleware');
 router.post('/', isAuthenticated, upload.fields(uploadFields), developerController.createDeveloper);
 
 // Route to retrieve all developers
-router.get('/', isAuthenticated, developerController.getAllDevelopers);
+router.get('/', developerController.getAllDevelopers);
 
 // Route to retrieve a specific developer by their ID
 router.get('/:id', isAuthenticated, developerController.getDeveloperById);
