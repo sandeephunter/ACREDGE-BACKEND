@@ -18,12 +18,12 @@ router.get('/', projectController.getAllProjects);
 
 // Route to retrieve a specific project by its ID
 // This route requires authentication to ensure that only logged-in users can access project details
-router.get('/:id', isAuthenticated, projectController.getProjectById);
+router.get('/:id', projectController.getProjectById);
 
 // Route to update an existing project by its ID
 // This route is protected and requires user authentication
 // It supports file uploads, allowing project-related files to be updated
-router.put('/:id', isAuthenticated, upload.fields(uploadFields), projectController.updateProject);
+router.put('/:id', upload.fields(uploadFields), projectController.updateProject);
 
 // Route to delete a project by its ID
 // This route requires authentication to prevent unauthorized deletions
