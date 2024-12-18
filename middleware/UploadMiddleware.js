@@ -2,8 +2,10 @@ const multer = require('multer');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 
+// Set up multer to use in-memory storage for uploaded files
 const storage = multer.memoryStorage();
 
+// Define file size limits in bytes for various file types
 const FILE_LIMITS = {
   logoUrl: 10 * 1024 * 1024,
   images: 50 * 1024 * 1024,
@@ -16,80 +18,72 @@ const FILE_LIMITS = {
   amenityLogo: 10 * 1024 * 1024
 };
 
+// Define maximum counts for each file type
 const MAX_COUNTS = {
-  logoUrl: 1,
-  images: 20,
-  videos: 5,
-  brochureUrl: 1,
-  reraCertificateUrl: 1,
-  layoutPlanUrl: 1,
-  insideImagesUrls: 20,
-  insideVideosUrls: 5,
+  logoUrl: 1, // Only 1 logo is allowed
+  images: 20, // Maximum 20 images can be uploaded
+  videos: 5, // Maximum 5 videos can be uploaded
+  brochureUrl: 1, // Only 1 brochure is allowed
+  reraCertificateUrl: 1, // Only 1 RERA certificate is allowed
+  layoutPlanUrl: 1, // Only 1 layout plan is allowed
+  insideImagesUrls: 20, // Maximum 20 inside images
+  insideVideosUrls: 5, // Maximum 5 inside videos
   amenityLogo: 1
 };
 
-// Helper function to sanitize and validate file extension
-const getFileExtension = (filename) => {
-  // Remove special characters and spaces from the extension
-  const ext = path.extname(filename)
-    .toLowerCase()
-    .replace(/[^a-z0-9.]/g, '')
-    .substring(1);
-  return ext;
-};
-
-// Helper function to check MIME type
-const isValidMimeType = (mimetype, allowedTypes) => {
-  return allowedTypes.some(type => mimetype.includes(type));
-};
-
+// Function to filter files based on type, size, and count
 const fileFilter = (req, file, cb) => {
-  // Define allowed MIME types
-  const allowedImageMimes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/bmp', 'image/tiff', 'image/svg+xml'];
-  const allowedVideoMimes = ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/x-matroska', 'video/webm', 'video/mpeg'];
-  const allowedDocMimes = [
-    'application/pdf',
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'image/jpeg',
-    'image/png',
-    'image/gif',
-    'image/webp',
-    'text/csv',
-    'application/vnd.ms-excel',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    'text/plain'
-  ];
+
+  // console.log('===== File Filter =====');
+  // console.log('Field name:', file.fieldname);
+  // console.log('Original name:', file.originalname);
+  // console.log('File size:', file.size);
+  // console.log('Mime type:', file.mimetype);
+  
+  // Allow any original filename
+  const originalName = file.originalname.toLowerCase();
+  const mimeType = file.mimetype.toLowerCase();
+
+  // console.log("Filtering file:", file.originalname, "Type:", ext, "Size:", file.size); // Log file details for debugging
+
+  // Check if the field name in the request matches the defined limits
+  if (!Object.keys(FILE_LIMITS).includes(file.fieldname)) {
+    // console.error(`Invalid field name: ${file.fieldname}`); // Log error for invalid field names
+    return cb(new Error(`Invalid field name: ${file.fieldname}`), false); // Return error callback
+  }
 
   try {
-    if (!Object.keys(FILE_LIMITS).includes(file.fieldname)) {
-      throw new Error(`Invalid field name: ${file.fieldname}`);
-    }
-
-    // Validate file based on MIME type first
+    // Validate based on field type
     switch (file.fieldname) {
       case 'logoUrl':
       case 'images':
       case 'insideImagesUrls':
-        if (!isValidMimeType(file.mimetype, allowedImageMimes)) {
-          throw new Error('Invalid image format. Supported formats: JPG, PNG, GIF, WEBP, BMP, TIFF, SVG');
+        // Accept common image formats
+        if (!mimeType.startsWith('image/')) {
+          throw new Error(`${file.fieldname} must be an image file`);
         }
         break;
 
       case 'videos':
       case 'insideVideosUrls':
-        if (!isValidMimeType(file.mimetype, allowedVideoMimes)) {
-          throw new Error('Invalid video format. Supported formats: MP4, MOV, AVI, MKV, WEBM, MPEG');
+        // Accept common video formats
+        if (!mimeType.startsWith('video/')) {
+          throw new Error(`${file.fieldname} must be a video file`);
         }
         break;
 
       case 'brochureUrl':
       case 'layoutPlanUrl':
       case 'reraCertificateUrl':
-        if (!isValidMimeType(file.mimetype, allowedDocMimes)) {
-          throw new Error('Invalid document format. Supported formats: PDF, DOC, DOCX, Images, CSV, XLS, XLSX, TXT');
+        // Accept PDF and common document formats
+        const validDocTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+        if (!validDocTypes.includes(mimeType)) {
+          throw new Error(`${file.fieldname} must be a PDF or document file`);
         }
         break;
+
+      default:
+        throw new Error('Invalid field name');
     }
 
     // Check file size
@@ -97,11 +91,14 @@ const fileFilter = (req, file, cb) => {
       throw new Error(`File size exceeds limit for ${file.fieldname}`);
     }
 
-    // Check file count for multiple uploads
-    if (MAX_COUNTS[file.fieldname] > 1) {
-      const existingFiles = req.files?.[file.fieldname] || [];
-      if (existingFiles.length >= MAX_COUNTS[file.fieldname]) {
-        throw new Error(`Maximum number of files (${MAX_COUNTS[file.fieldname]}) reached for ${file.fieldname}`);
+    // Check file count for multiple file fields
+    if (file.fieldname !== 'logoUrl' && 
+        file.fieldname !== 'brochureUrl' &&
+        file.fieldname !== 'layoutPlanUrl' &&
+        file.fieldname !== 'reraCertificateUrl') {
+      const existingFiles = req.files ? req.files[file.fieldname] : [];
+      if (existingFiles && existingFiles.length >= MAX_COUNTS[file.fieldname]) {
+        throw new Error(`Maximum number of files reached for ${file.fieldname}`);
       }
     }
 
@@ -111,11 +108,20 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-const uploadFields = Object.entries(MAX_COUNTS).map(([name, maxCount]) => ({
-  name,
-  maxCount
-}));
+// Configure upload fields
+const uploadFields = [
+  { name: 'logoUrl', maxCount: MAX_COUNTS.logoUrl },
+  { name: 'images', maxCount: MAX_COUNTS.images },
+  { name: 'videos', maxCount: MAX_COUNTS.videos },
+  { name: 'brochureUrl', maxCount: MAX_COUNTS.brochureUrl },
+  { name: 'reraCertificateUrl', maxCount: MAX_COUNTS.reraCertificateUrl },
+  { name: 'layoutPlanUrl', maxCount: MAX_COUNTS.layoutPlanUrl },
+  { name: 'insideImagesUrls', maxCount: MAX_COUNTS.insideImagesUrls },
+  { name: 'insideVideosUrls', maxCount: MAX_COUNTS.insideVideosUrls },
+  { name: 'amenityLogo', maxCount: MAX_COUNTS.amenityLogo }
+];
 
+// Configure multer
 const upload = multer({
   storage,
   fileFilter,
@@ -124,6 +130,7 @@ const upload = multer({
   }
 });
 
+// Error handling middleware
 const handleUploadError = (err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     if (err.code === 'LIMIT_UNEXPECTED_FILE') {
@@ -133,11 +140,6 @@ const handleUploadError = (err, req, res, next) => {
     }
     return res.status(400).json({ error: err.message });
   }
-  
-  if (err.message) {
-    return res.status(400).json({ error: err.message });
-  }
-  
   next(err);
 };
 
