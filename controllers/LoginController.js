@@ -96,12 +96,14 @@ exports.verifyOTP = async (req, res) => {
       expiresAt: admin.firestore.Timestamp.fromDate(expirationDate)
     });
 
-    // Send JWT as a secure cookie to the client
+    // Production cookie settings
     res.cookie('token', token, {
       httpOnly: true,
       secure: true,
-      sameSite: 'none',
-      maxAge: rememberMe ? 7 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000,
+      sameSite: 'Lax',
+      domain: '.acredge.in',
+      path: '/',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
     res.status(200).json({ message: "Logged in successfully" });

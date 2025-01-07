@@ -25,11 +25,12 @@ app.use(cookieParser());
 app.use(bodyParser.json());
 
 // Configure CORS settings
+//For Production
 app.use(
   cors({
-    origin: true, // Allow requests from any origin
-    credentials: true, // Allow credentials to be included in requests
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], // Supported HTTP methods
+    origin: ['https://acredge.in', 'https://www.acredge.in'],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   })
 );
 
