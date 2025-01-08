@@ -96,10 +96,11 @@ exports.verifyOTP = async (req, res) => {
       expiresAt: admin.firestore.Timestamp.fromDate(expirationDate)
     });
 
+    // Send JWT as a secure cookie to the client
     res.cookie('token', token, {
       httpOnly: true,
       secure: true,
-      sameSite: 'Lax',
+      sameSite: 'none',
       maxAge: rememberMe ? 7 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000,
     });
 
