@@ -101,8 +101,8 @@ exports.verifyOTP = async (req, res) => {
       httpOnly: true,
       secure: true,
       sameSite: 'Lax',
-      domain: '.acredge.in',
-      path: '/',
+      // domain: '.acredge.in',
+      // path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 

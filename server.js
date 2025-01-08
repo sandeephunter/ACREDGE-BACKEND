@@ -28,7 +28,7 @@ app.use(bodyParser.json());
 //For Production
 app.use(
   cors({
-    origin: ['https://acredge.in', 'https://www.acredge.in'],
+    origin: true,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   })
